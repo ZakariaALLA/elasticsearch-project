@@ -5,8 +5,9 @@ import com.zakariaalla.elasticsearchdemo.service.PersonService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/persons")
+@RequestMapping("/api/person")
 public class PersonController {
+
     private final PersonService personService;
 
     public PersonController(PersonService personService) {
