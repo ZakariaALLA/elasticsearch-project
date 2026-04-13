@@ -46,26 +46,28 @@ public class IndexService {
                 IndexCoordinates index = IndexCoordinates.of(indexName);
                 var indexOps = elasticsearchOperations.indexOps(index);
 
-                final boolean indexExists = indexOps.exists();
-                if (indexExists) {
+                if (indexOps.exists()) {
                     if (!deleteExisting) {
+                        LOG.info("Index '{}' already exists, skipping", indexName);
                         continue;
                     }
 
                     boolean deleted = indexOps.delete();
                     LOG.info("Index '{}' deleted: {}", indexName, deleted);
+
+                    if (!deleted) {
+                        LOG.error("Failed to delete index '{}', skipping creation", indexName);
+                        continue;
+                    }
                 }
 
-                boolean created = indexOps.create();
+                Document settingsDoc = Document.parse(settings);
+                Document actualSettings = settingsDoc.containsKey("settings") ? Document.parse(settingsDoc.get("settings").toString()) : settingsDoc;
+
+                boolean created = indexOps.create(actualSettings);
                 if (!created) {
                     LOG.warn("Index '{}' was not created (create() returned false)", indexName);
-                }
-
-                try {
-                    Document settingsDoc = Document.parse(settings);
-                    indexOps.putMapping(settingsDoc);
-                } catch (Exception e) {
-                    LOG.warn("Failed to apply settings for index '{}': {}", indexName, e.getMessage());
+                    continue;
                 }
 
                 final String mappings = loadMappings(indexName);
@@ -78,7 +80,8 @@ public class IndexService {
                     }
                 }
 
-                LOG.info("Index '{}' created/updated successfully", indexName);
+                LOG.info("Index '{}' created successfully", indexName);
+
             } catch (final Exception e) {
                 LOG.error(e.getMessage(), e);
             }

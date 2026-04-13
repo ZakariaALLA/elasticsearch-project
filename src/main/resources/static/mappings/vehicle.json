@@ -1,6 +1,6 @@
 {
   "properties": {
-    "id ": {
+    "id": {
       "type": "keyword"
     },
     "number": {
